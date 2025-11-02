@@ -1,0 +1,24 @@
+# Caddy data
+caddy-data/
+
+# Vaultwarden data
+vw-data/
+
+# compose sectes
+*.secret
+
+# Terraform files
+infrastructure/.terraform/
+infrastructure/.terraform.lock.hcl
+infrastructure/*.auto.tfvars
+infrastructure/*.auto.tfvars.json
+infrastructure/*.tfstate
+infrastructure/*.tfstate.backup
+infrastructure/*.tfvars
+infrastructure/crash.log
+infrastructure/override.tf
+infrastructure/override.tf.json
+infrastructure/terraform.tfvars
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars

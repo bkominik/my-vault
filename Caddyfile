@@ -1,0 +1,18 @@
+{
+    email bkominik@gmail.com
+}
+
+vault.kominik.net {
+    # Enable compression
+    encode zstd gzip
+
+    # Caddy applies the most specific matching rule first.
+    # This block handles WebSocket traffic.
+    reverse_proxy /notifications/hub vaultwarden:8080
+
+    # This block handles all other traffic to Vaultwarden.
+    reverse_proxy vaultwarden:8080 {
+        # Pass the client's real IP to Vaultwarden
+        header_up X-Real-IP {remote_host}
+    }
+}

@@ -1,0 +1,50 @@
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    volumes:
+      - ./vw-data:/data
+    environment:
+      # This is crucial for Vaultwarden to generate correct URLs
+      - DOMAIN=/run/secrets/domain
+      # Enable admin portal
+      - ADMIN_TOKEN_FILE=/run/secrets/admin_token
+      # Enable WebSocket notifications
+      - WEBSOCKET_ENABLED=true
+    networks:
+      - vaultwarden-net
+    # Expose port only to the internal network for Caddy
+    expose:
+      - 8080
+    secrets:
+      - domain
+      - admin_token
+
+  caddy:
+    image: caddy:latest
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      # Bind to host ports for public traffic
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Mount the Caddyfile configuration
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      # Persistent volume for Caddy's state and certificates
+      - ./caddy-data:/data
+    networks:
+      - vaultwarden-net
+    depends_on:
+      - vaultwarden
+
+networks:
+  vaultwarden-net:
+    driver: bridge
+
+secrets:
+  domain:
+    file: ./domain.secret
+  admin_token:
+    file: ./admin_token.secret
