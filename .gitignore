@@ -4,8 +4,11 @@ caddy-data/
 # Vaultwarden data
 vw-data/
 
-# compose sectes
+# all compose sectes
 **/*.secret
+
+# Ignore all .env files
+**/.env
 
 # Terraform files
 infrastructure/.terraform/
@@ -22,6 +25,3 @@ infrastructure/terraform.tfvars
 .terraform/
 .terraform.lock.hcl
 terraform.tfvars
-
-# Ignore all .env files
-**/.env
