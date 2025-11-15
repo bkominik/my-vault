@@ -1,0 +1,10 @@
+[Unit]
+Description=Update Lightsail DNS Record
+After=network.target
+
+[Service]
+ExecStart=/home/barryk/src/vaultwarden/update_dns.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

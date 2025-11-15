@@ -4,14 +4,85 @@ package_upgrade: true
 packages:
   - htop
   - nmap
-  - dnsutils 
+  - dnsutils
   - tmux
   - netcat-openbsd
   - whois
 
+write_files:
+  - path: /usr/local/bin/update-dns
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env python3
+      import boto3
+      import requests
+      # Configuration
+      DOMAIN_NAME = "kominik.net"
+      RECORD_NAME = "vault"
+      def get_public_ip():
+          """Fetches the public IP address."""
+          try:
+              response = requests.get("https://api.ipify.org")
+              response.raise_for_status()
+              return response.text
+          except requests.exceptions.RequestException as e:
+              print(f"Error getting public IP: {e}")
+              return None
+      def fqdn(record_name, domain_name):
+          """Return the fully qualified domain name"""
+          if record_name == "@" or record_name == domain_name:
+              return domain_name
+          return f"{record_name}.{domain_name}"
+      def update_dns_record(ip):
+          """Updates the Lightsail DNS A record."""
+          if not ip:
+              return
+          record = fqdn(RECORD_NAME, DOMAIN_NAME)
+          try:
+              lightsail = boto3.client("lightsail")
+              domain = lightsail.get_domain(domainName=DOMAIN_NAME)
+              entries = domain.get("domain", {}).get("domainEntries", []) if isinstance(domain, dict) else []
+              matching = None
+              for e in entries:
+                  if e.get("name") == record and e.get("type") == "A":
+                      matching = e
+                      break
+              if matching and matching.get("id"):
+                  domain_entry = {
+                      "id": matching.get("id"),
+                      "name": record,
+                      "type": "A",
+                      "target": ip,
+                  }
+                  lightsail.update_domain_entry(domainName=DOMAIN_NAME, domainEntry=domain_entry)
+                  print(f"Successfully updated DNS record for {record} to {ip}")
+              else:
+                  domain_entry = {"name": record, "type": "A", "target": ip}
+                  lightsail.create_domain_entry(domainName=DOMAIN_NAME, domainEntry=domain_entry)
+                  print(f"Successfully created DNS record for {record} -> {ip}")
+          except Exception as e:
+              print(f"Error updating DNS record: {e}")
+      if __name__ == "__main__":
+          public_ip = get_public_ip()
+          record = fqdn(RECORD_NAME, DOMAIN_NAME)
+          print(f"Setting {record} to {public_ip}")
+          update_dns_record(public_ip)
+
+  - path: /etc/systemd/system/update-dns.service
+    permissions: "0644"
+    content: |
+      [Unit]
+      Description=Update DNS record
+      After=network.target
+      [Service]
+      ExecStart=/usr/local/bin/update-dns
+      Restart=on-failure
+      [Install]
+      WantedBy=multi-user.target
+
 runcmd:
   # Add Docker's official GPG key:
-  - install -m 0D755 -d /etc/apt/keyrings
+  - install -m 0755 -d /etc/apt/keyrings
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
   - chmod a+r /etc/apt/keyrings/docker.gpg
 
@@ -33,4 +104,7 @@ runcmd:
   # Restart docker to apply changes
   - systemctl restart docker
 
+  # Enable and start the update-dns service
+  - systemctl enable update-dns.service
+  - systemctl start update-dns.service
 
