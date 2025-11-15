@@ -5,7 +5,7 @@ caddy-data/
 vw-data/
 
 # compose sectes
-*.secret
+**/*.secret
 
 # Terraform files
 infrastructure/.terraform/
@@ -22,3 +22,6 @@ infrastructure/terraform.tfvars
 .terraform/
 .terraform.lock.hcl
 terraform.tfvars
+
+# Ignore all .env files
+**/.env

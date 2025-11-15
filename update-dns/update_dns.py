@@ -2,10 +2,12 @@
 
 import boto3
 import requests
+import os
 
 # Configuration
 DOMAIN_NAME = "kominik.net"
 RECORD_NAME = "test"
+AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 
 
 def get_public_ip():
@@ -34,7 +36,7 @@ def update_dns_record(ip):
     record = fqdn(RECORD_NAME, DOMAIN_NAME)
 
     try:
-        lightsail = boto3.client("lightsail")
+        lightsail = boto3.client("lightsail", region_name=AWS_REGION)
         # Look up existing domain entries to get the required `id` for update
         domain = lightsail.get_domain(domainName=DOMAIN_NAME)
         entries = domain.get("domain", {}).get("domainEntries", []) if isinstance(domain, dict) else []
