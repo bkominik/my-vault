@@ -1,4 +1,3 @@
-
 # Create a VM instance
 resource "google_compute_instance" "main" {
   name         = var.project
@@ -13,21 +12,24 @@ resource "google_compute_instance" "main" {
   }
 
   network_interface {
-    network    = google_compute_network.main.self_link
-    subnetwork = google_compute_subnetwork.main.self_link
-
+    # Using the default network for simplicity.
+    # Replace with your custom network if needed.
+    network = "default"
     access_config {
       # This empty block requests a public IPv4 address
     }
   }
 
-  tags = ["server"]
+  tags = ["ssh-iap"]
 
   metadata = {
-    ssh-keys  = var.ssh_key
-    user-data = file("cloud-init.yaml")
+    user-data = templatefile("${path.module}/cloud-init.yaml.tpl", {
+      env_vars   = google_secret_manager_secret_version.aws_credentials_version.secret_data
+      aws_region = var.aws_region
+    })
+  }
+
+  service_account {
+    scopes = ["cloud-platform"]
   }
 }
-
-
-

@@ -39,3 +39,31 @@ variable "portainer_source_ranges" {
   description = "A list of CIDR blocks to allow Portainer agent access from."
   default     = []
 }
+
+variable "aws_access_key_id" {
+  description = "AWS access key ID."
+  type        = string
+  sensitive   = true
+}
+
+variable "aws_secret_access_key" {
+
+  description = "AWS secret access key."
+
+  type        = string
+
+  sensitive   = true
+
+}
+
+
+
+variable "aws_region" {
+
+  description = "The AWS region."
+
+  type        = string
+
+  default     = "us-east-1"
+
+}

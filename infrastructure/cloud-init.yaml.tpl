@@ -1,24 +1,45 @@
 #cloud-config
+
+package_update: true
 package_upgrade: true
 
 packages:
+  # For docker
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+  # Utilities
   - htop
   - nmap
   - dnsutils
   - tmux
   - netcat-openbsd
   - whois
+  - python3-pip
+  - python3-boto3
+  - python3-requests
 
 write_files:
+  - path: /etc/infrastructure.env
+    content: |
+      ${env_vars}
+    permissions: '0600'
+    owner: root:root
+
   - path: /usr/local/bin/update-dns
     permissions: "0755"
     content: |
       #!/usr/bin/env python3
       import boto3
       import requests
+      import os
+
       # Configuration
-      DOMAIN_NAME = "kominik.net"
-      RECORD_NAME = "vault"
+      DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "kominik.net")
+      RECORD_NAME = os.environ.get("RECORD_NAME", "vault")
+      
       def get_public_ip():
           """Fetches the public IP address."""
           try:
@@ -75,12 +96,18 @@ write_files:
       Description=Update DNS record
       After=network.target
       [Service]
+      EnvironmentFile=/etc/infrastructure.env
       ExecStart=/usr/local/bin/update-dns
       Restart=on-failure
       [Install]
       WantedBy=multi-user.target
 
 runcmd:
+  # Enable and start the update-dns service
+  - systemctl daemon-reload
+  - systemctl enable update-dns.service
+  - systemctl start update-dns.service
+
   # Add Docker's official GPG key:
   - install -m 0755 -d /etc/apt/keyrings
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -103,8 +130,3 @@ runcmd:
 
   # Restart docker to apply changes
   - systemctl restart docker
-
-  # Enable and start the update-dns service
-  - systemctl enable update-dns.service
-  - systemctl start update-dns.service
-
