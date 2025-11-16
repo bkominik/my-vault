@@ -1,5 +1,11 @@
 #cloud-config
 
+users:
+  - name: barryk
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: docker, sudo
+    shell: /usr/bin/zsh
+
 package_update: true
 package_upgrade: true
 
@@ -20,6 +26,7 @@ packages:
   - python3-pip
   - python3-boto3
   - python3-requests
+  - zsh
 
 write_files:
   - path: /etc/infrastructure.env
@@ -37,8 +44,9 @@ write_files:
       import os
 
       # Configuration
-      DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "kominik.net")
-      RECORD_NAME = os.environ.get("RECORD_NAME", "vault")
+      DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "FQDN")
+      RECORD_NAME = os.environ.get("RECORD_NAME", "test")
+      AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
       
       def get_public_ip():
           """Fetches the public IP address."""
@@ -60,7 +68,7 @@ write_files:
               return
           record = fqdn(RECORD_NAME, DOMAIN_NAME)
           try:
-              lightsail = boto3.client("lightsail")
+              lightsail = boto3.client("lightsail", region_name=AWS_REGION)
               domain = lightsail.get_domain(domainName=DOMAIN_NAME)
               entries = domain.get("domain", {}).get("domainEntries", []) if isinstance(domain, dict) else []
               matching = None
@@ -96,6 +104,7 @@ write_files:
       Description=Update DNS record
       After=network.target
       [Service]
+      Environment="AWS_REGION=${aws_region}"
       EnvironmentFile=/etc/infrastructure.env
       ExecStart=/usr/local/bin/update-dns
       Restart=on-failure
@@ -119,9 +128,6 @@ runcmd:
   # Update apt and install Docker packages
   - apt-get update -y
   - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-  # Add 'barryk' user to the docker group
-  - usermod -aG docker barryk
 
   # Configure Docker daemon for security (logging driver with size limits)
   - mkdir -p /etc/docker
