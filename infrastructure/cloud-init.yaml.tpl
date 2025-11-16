@@ -3,7 +3,7 @@
 users:
   - name: barryk
     sudo: ALL=(ALL) NOPASSWD:ALL
-    groups: docker, sudo
+    groups: docker, sudo, adm
     shell: /usr/bin/zsh
 
 package_update: true
@@ -27,6 +27,7 @@ packages:
   - python3-boto3
   - python3-requests
   - zsh
+  - jq
 
 write_files:
   - path: /etc/infrastructure.env
@@ -105,13 +106,16 @@ write_files:
       After=network.target
       [Service]
       Environment="AWS_REGION=${aws_region}"
-      EnvironmentFile=/etc/infrastructure.env
+      EnvironmentFile=/etc/infrastructure.env.sh
       ExecStart=/usr/local/bin/update-dns
       Restart=on-failure
       [Install]
       WantedBy=multi-user.target
 
 runcmd:
+  # Create the environment file for the update-dns service
+  - jq -r 'to_entries|map("export \(.key)=\(.value)")|.[]' /etc/infrastructure.env > /etc/infrastructure.env.sh
+
   # Enable and start the update-dns service
   - systemctl daemon-reload
   - systemctl enable update-dns.service
