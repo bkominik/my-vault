@@ -34,6 +34,7 @@ resource "google_compute_instance" "main" {
       env_vars   = jsonencode(local.merged_vars)
       aws_region = var.aws_region
     })
+    ssh-keys = var.ssh_key
   }
 
   service_account {
