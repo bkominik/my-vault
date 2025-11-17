@@ -47,23 +47,23 @@ variable "aws_access_key_id" {
 }
 
 variable "aws_secret_access_key" {
-
   description = "AWS secret access key."
-
   type        = string
-
   sensitive   = true
-
 }
 
-
-
 variable "aws_region" {
-
   description = "The AWS region."
-
   type        = string
-
   default     = "us-east-1"
+}
 
+variable "domain_name" {
+  description = "The domain name for the DNS record."
+  type        = string
+}
+
+variable "record_name" {
+  description = "The record name for the DNS record."
+  type        = string
 }

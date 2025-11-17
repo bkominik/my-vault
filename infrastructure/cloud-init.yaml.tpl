@@ -114,7 +114,8 @@ write_files:
 
 runcmd:
   # Create the environment file for the update-dns service
-  - jq -r 'to_entries|map("export \(.key)=\(.value)")|.[]' /etc/infrastructure.env > /etc/infrastructure.env.sh
+  - jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' /etc/infrastructure.env > /etc/infrastructure.env.sh
+  - chmod 600 /etc/infrastructure.env.sh
 
   # Enable and start the update-dns service
   - systemctl daemon-reload
