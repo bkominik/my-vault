@@ -38,8 +38,8 @@ write_files:
 
   - path: /usr/local/bin/update-dns
     permissions: "0755"
-    content: |
-      ${update_dns_script}
+    encoding: b64
+    content: ${update_dns_script}
 
   - path: /etc/systemd/system/update-dns.service
     permissions: "0644"

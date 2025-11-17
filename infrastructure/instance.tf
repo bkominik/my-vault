@@ -1,9 +1,10 @@
 # Create a VM instance
 
 locals {
-  aws_creds   = jsondecode(google_secret_manager_secret_version.aws_credentials_version.secret_data)
-  dns_config  = jsondecode(google_secret_manager_secret_version.dns_config_version.secret_data)
-  merged_vars = merge(local.aws_creds, local.dns_config)
+  aws_creds           = jsondecode(google_secret_manager_secret_version.aws_credentials_version.secret_data)
+  dns_config          = jsondecode(google_secret_manager_secret_version.dns_config_version.secret_data)
+  merged_vars         = merge(local.aws_creds, local.dns_config)
+  update_dns_script   = base64encode(file("${path.module}/../update-dns/update_dns.py"))
 }
 
 resource "google_compute_instance" "main" {
@@ -19,9 +20,8 @@ resource "google_compute_instance" "main" {
   }
 
   network_interface {
-    # Using the default network for simplicity.
-    # Replace with your custom network if needed.
-    network = "default"
+    network    = google_compute_network.main.id
+    subnetwork = google_compute_subnetwork.main.id
     access_config {
       # This empty block requests a public IPv4 address
     }
@@ -31,9 +31,9 @@ resource "google_compute_instance" "main" {
 
   metadata = {
     user-data = templatefile("${path.module}/cloud-init.yaml.tpl", {
-      env_vars            = jsonencode(local.merged_vars)
-      aws_region          = var.aws_region
-      update_dns_script   = file("${path.module}/../update-dns/update_dns.py")
+      env_vars          = jsonencode(local.merged_vars)
+      aws_region        = var.aws_region
+      update_dns_script = local.update_dns_script
     })
     ssh-keys = var.ssh_key
   }
