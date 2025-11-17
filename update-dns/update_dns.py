@@ -5,8 +5,8 @@ import requests
 import os
 
 # Configuration
-DOMAIN_NAME = "kominik.net"
-RECORD_NAME = "test"
+DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "FQDN")
+RECORD_NAME = os.environ.get("RECORD_NAME", "test")
 AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 
 

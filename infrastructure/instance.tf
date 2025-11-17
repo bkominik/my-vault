@@ -31,8 +31,9 @@ resource "google_compute_instance" "main" {
 
   metadata = {
     user-data = templatefile("${path.module}/cloud-init.yaml.tpl", {
-      env_vars   = jsonencode(local.merged_vars)
-      aws_region = var.aws_region
+      env_vars            = jsonencode(local.merged_vars)
+      aws_region          = var.aws_region
+      update_dns_script   = file("${path.module}/../update-dns/update_dns.py")
     })
     ssh-keys = var.ssh_key
   }
