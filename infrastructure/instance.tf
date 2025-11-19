@@ -1,10 +1,12 @@
 # Create a VM instance
 
 locals {
-  aws_creds           = jsondecode(google_secret_manager_secret_version.aws_credentials_version.secret_data)
-  dns_config          = jsondecode(google_secret_manager_secret_version.dns_config_version.secret_data)
-  merged_vars         = merge(local.aws_creds, local.dns_config)
-  update_dns_script   = base64encode(file("${path.module}/../update-dns/update_dns.py"))
+  aws_creds             = jsondecode(google_secret_manager_secret_version.aws_credentials_version.secret_data)
+  dns_config            = jsondecode(google_secret_manager_secret_version.dns_config_version.secret_data)
+  merged_vars           = merge(local.aws_creds, local.dns_config)
+  update_dns_script     = base64encode(file("${path.module}/../update-dns/update_dns.py"))
+  docker_compose_config = base64encode(file("${path.module}/../docker-compose.yaml"))
+  caddyfile_config      = base64encode(file("${path.module}/../Caddyfile"))
 }
 
 resource "google_compute_instance" "main" {
@@ -31,9 +33,12 @@ resource "google_compute_instance" "main" {
 
   metadata = {
     user-data = templatefile("${path.module}/cloud-init.yaml.tpl", {
-      env_vars          = jsonencode(local.merged_vars)
-      aws_region        = var.aws_region
-      update_dns_script = local.update_dns_script
+      env_vars              = jsonencode(local.merged_vars)
+      aws_region            = var.aws_region
+      update_dns_script     = local.update_dns_script
+      docker_compose_config = local.docker_compose_config
+      caddyfile_config      = local.caddyfile_config
+      domain                = local.dns_config.DOMAIN_NAME
     })
     ssh-keys = var.ssh_key
   }

@@ -55,6 +55,16 @@ write_files:
       [Install]
       WantedBy=multi-user.target
 
+  - path: /opt/my-vault/docker-compose.yaml
+    permissions: "0644"
+    encoding: b64
+    content: ${docker_compose_config}
+
+  - path: /opt/my-vault/Caddyfile
+    permissions: "0644"
+    encoding: b64
+    content: ${caddyfile_config}
+
 runcmd:
   # Create the environment file for the update-dns service
   - jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' /etc/infrastructure.env > /etc/infrastructure.env.sh
@@ -84,3 +94,13 @@ runcmd:
 
   # Restart docker to apply changes
   - systemctl restart docker
+
+  # Create a directory for the vault
+  - mkdir -p /opt/my-vault
+
+  # Create secrets
+  - echo "${domain}" > /opt/my-vault/domain.secret
+  - openssl rand -base64 48 > /opt/my-vault/admin_token.secret
+
+  # Run docker-compose
+  - docker compose -f /opt/my-vault/docker-compose.yaml up -d
